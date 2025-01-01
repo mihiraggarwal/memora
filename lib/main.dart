@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,15 +19,18 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: "Inter"
       ),
-      home: const MyHomePage(title: 'memora'),
+      home: MyHomePage(title: 'memora'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  MyHomePage({super.key, required this.title});
 
   final String title;
+
+  double lat = 0;
+  double lon = 0;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -52,6 +57,38 @@ class _MyHomePageState extends State<MyHomePage> {
             Container(
               margin: EdgeInsets.only(top: 40.0),
               child: Home()
+            ),
+            Container(
+              margin: EdgeInsets.only(top: 50.0),
+              width: double.infinity,
+              child: ElevatedButton(
+                child: Text(
+                    "Get Location"
+                ),
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.blue),
+                    foregroundColor: MaterialStateProperty.all(Colors.black),
+                    shape: MaterialStateProperty.all(
+                        RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.0)
+                        )
+                    )
+                ),
+                onPressed: () async {
+                  var location = await getLocation();
+                  setState(() {
+                    widget.lat = location.latitude!;
+                    widget.lon = location.longitude!;
+                  });
+                },
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(widget.lat.toString()),
+                Text(widget.lon.toString())
+              ],
             )
           ],
         ),
@@ -83,8 +120,8 @@ class Home extends StatelessWidget {
                   width: 110,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 20.0),
+              const Padding(
+                padding: EdgeInsets.only(left: 20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -184,7 +221,7 @@ class _BottomNavState extends State<BottomNav> {
       type: BottomNavigationBarType.fixed,
       showSelectedLabels: false,
       showUnselectedLabels: false,
-      items: [
+      items: const [
         BottomNavigationBarItem(
           label: "Home",
             icon: Icon(Icons.home)
@@ -206,4 +243,42 @@ class _BottomNavState extends State<BottomNav> {
   }
 }
 
+class Map extends StatefulWidget {
+  const Map({Key? key}) : super(key: key);
 
+  @override
+  _MapState createState() => _MapState();
+}
+
+class _MapState extends State<Map> {
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+
+Future<LocationData> getLocation() async {
+  Location location = Location();
+  bool servicesEnabled = await location.serviceEnabled();
+
+  if (!servicesEnabled) {
+    servicesEnabled = await location.requestService();
+
+    // if (!servicesEnabled) return;
+
+  }
+
+  var permissionGranted = await location.hasPermission();
+
+  if (permissionGranted == PermissionStatus.denied) {
+    permissionGranted = await location.requestPermission();
+
+    // if (permissionGranted != PermissionStatus.granted) return;
+
+  }
+
+  var currentLocation = await location.getLocation();
+  return currentLocation;
+}
