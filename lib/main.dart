@@ -76,9 +76,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 onPressed: () async {
                   var location = await getLocation();
+                  var currentLocation = await location.getLocation();
                   setState(() {
-                    widget.lat = location.latitude!;
-                    widget.lon = location.longitude!;
+                    widget.lat = currentLocation.latitude!;
+                    widget.lon = currentLocation.longitude!;
+                  });
+
+                  location.onLocationChanged.listen((LocationData newLocation) {
+                    setState(() {
+                      widget.lat = newLocation.latitude!;
+                      widget.lon = newLocation.longitude!;
+                    });
                   });
                 },
               ),
@@ -252,14 +260,13 @@ class Map extends StatefulWidget {
 
 class _MapState extends State<Map> {
 
-
   @override
   Widget build(BuildContext context) {
     return Container();
   }
 }
 
-Future<LocationData> getLocation() async {
+Future<Location> getLocation() async {
   Location location = Location();
   bool servicesEnabled = await location.serviceEnabled();
 
@@ -279,6 +286,7 @@ Future<LocationData> getLocation() async {
 
   }
 
-  var currentLocation = await location.getLocation();
-  return currentLocation;
+  location.enableBackgroundMode(enable: true);
+
+  return location;
 }
