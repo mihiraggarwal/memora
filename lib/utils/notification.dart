@@ -100,12 +100,13 @@ class Messaging {
     });
   }
 
-  Future<void> initNotification() async {
+  Future<String> initNotification() async {
     await _firebaseMessaging.requestPermission();
     final fCMToken = await _firebaseMessaging.getToken();
-    print("token: " + fCMToken!);
 
     initPushNotifications();
     initLocalNotifications();
+
+    return fCMToken!;
   }
 }

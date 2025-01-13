@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:memora/main.dart';
+
+import '../utils/notification.dart';
 
 class Details extends StatefulWidget {
   const Details({Key? key}) : super(key: key);
@@ -115,12 +118,15 @@ class _QuestionsState extends State<Questions> {
                 details["uid"] = auth.currentUser?.uid;
                 details["email"] = auth.currentUser?.email;
 
+                String fCMToken = await Messaging().initNotification();
+                details["fCMToken"] = fCMToken;
+
                 await firestore.collection("users").add(
                   details
                 );
 
                 print("User saved");
-                Navigator.pushNamed(context, '/');
+                Navigator.pushNamed(context, MyApp.id);
               }
             }
           ),

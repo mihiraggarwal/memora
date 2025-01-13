@@ -16,7 +16,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
-  await Messaging().initNotification();
   runApp(const MyApp());
 }
 

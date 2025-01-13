@@ -180,7 +180,7 @@ class _AuthState extends State<Auth> {
                                       //     .showSnackBar(const SnackBar(
                                       //     content: Text(
                                       //         'Logged in successfully')));
-                                      // Navigator.pushNamed(context, '/');
+                                      Navigator.pushNamed(context, MyApp.id);
                                     } on FirebaseAuthException catch (e) {
                                       print(e.code);
                                       if (e.code == 'user-not-found') {
