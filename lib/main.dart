@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'memora',
       routes: {
         MyApp.id: (context) => MyHomePage(title: "memora"),
