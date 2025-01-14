@@ -125,6 +125,8 @@ class _QuestionsState extends State<Questions> {
                   details
                 );
 
+                auth.currentUser?.updateDisplayName(details["name"]);
+
                 print("User saved");
                 Navigator.pushNamed(context, MyApp.id);
               }

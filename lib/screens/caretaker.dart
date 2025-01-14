@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:memora/widgets/BottomNav.dart';
 
 class Caretaker extends StatefulWidget {
   const Caretaker({Key? key}) : super(key: key);
@@ -19,24 +18,40 @@ class _CaretakerState extends State<Caretaker> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   List caretakers = [];
+  bool request = false;
+  String requestor = '';
+
+  void initState() {
+    super.initState();
+    var userUid = auth.currentUser!.uid;
+
+    firestore.collection("users").where("uid", isEqualTo: userUid)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      querySnapshot.docs.forEach((doc) {
+        Map<String, String> taker = {};
+
+        if ((doc.data() as Map<String, dynamic>).containsKey('caretakers')) {
+          doc["caretakers"].forEach((element) {
+            taker["name"] = element["name"];
+            taker["email"] = element["email"];
+
+            caretakers.add(taker);
+          });
+        }
+
+        if (doc["request"] == true) {
+          setState(() {
+            request = true;
+            requestor = doc["requestor"];
+          });
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-
-    var userUid = auth.currentUser!.uid;
-
-    firestore.collection("users").where("uid", isEqualTo: userUid).get().then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) {
-
-        Map<String, String> taker = {};
-
-        taker["name"] = doc["name"];
-        taker["email"] = doc["email"];
-
-        caretakers.add(taker);
-      });
-    });
-
     return Column(
       children: [
         const Text(
@@ -46,6 +61,7 @@ class _CaretakerState extends State<Caretaker> {
             fontSize: 30
           ),
         ),
+        Request(request: request, requestor: requestor),
         ListView.builder(
           itemCount: caretakers.length,
           itemBuilder: (BuildContext context, index) {
@@ -78,6 +94,124 @@ class _CaretakerState extends State<Caretaker> {
     );
   }
 }
+
+class Request extends StatefulWidget {
+  bool request = false;
+  String requestor = '';
+
+  Request({Key? key, required this.request, this.requestor = ''}) : super(key: key);
+
+  @override
+  State<Request> createState() => _RequestState();
+}
+
+class _RequestState extends State<Request> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseAuth auth = FirebaseAuth.instance;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.request == true) {
+      return Container(
+        padding: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+            border: Border.all(
+                color: Colors.black
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(5.0))
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "${widget.requestor} is requesting to add you as a caretaker.",
+              style: TextStyle(
+                  fontSize: 20
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.green),
+                        foregroundColor: MaterialStateProperty.all(Colors.black),
+                        shape: MaterialStateProperty.all(
+                            RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5.0)
+                            )
+                        )
+                    ),
+
+                    onPressed: () async {
+                      await firestore.collection("users").where("email", isEqualTo: widget.requestor).limit(1).get().then((QuerySnapshot snapshot) {
+                        snapshot.docs.forEach((doc) {
+                          doc.reference.update({
+                            "caretakers": FieldValue.arrayUnion([{
+                              "name": auth.currentUser?.displayName,
+                              "email": auth.currentUser?.email
+                            }])
+                          });
+                        });
+                      });
+
+                      await firestore.collection("users").where("uid", isEqualTo: auth.currentUser?.uid).limit(1).get().then((QuerySnapshot snapshot) {
+                        snapshot.docs.forEach((doc) {
+                          doc.reference.update({
+                            "request": false,
+                            "requestor": null
+                          });
+                        });
+                      });
+
+                      setState(() {
+                        widget.request = false;
+                      });
+
+                    },
+                    child: const Text(
+                        "Accept"
+                    ),
+                  ),
+                ),
+                Spacer(flex: 1),
+                Expanded(
+                  flex: 5,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.red),
+                        foregroundColor: MaterialStateProperty.all(Colors.black),
+                        shape: MaterialStateProperty.all(
+                            RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5.0)
+                            )
+                        )
+                    ),
+                    onPressed: () async {
+                      await firestore.collection("users").where("uid", isEqualTo: auth.currentUser?.uid).limit(1).get().then((QuerySnapshot snapshot) {
+                        snapshot.docs.forEach((doc) {
+                          doc.reference.update({
+                            "request": false,
+                            "requestor": null
+                          });
+                        });
+                      });
+                    },
+                    child: const Text(
+                        "Reject"
+                    ),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      );
+    } else return Container();
+  }
+}
+
 
 class CareDialog extends StatelessWidget {
   CareDialog({Key? key}) : super(key: key);
