@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:memora/screens/caretaker.dart';
 import 'package:memora/utils/notification.dart';
 import 'firebase_options.dart';
 
@@ -32,7 +33,8 @@ class MyApp extends StatelessWidget {
       title: 'memora',
       routes: {
         MyApp.id: (context) => MyHomePage(title: "memora"),
-        Auth.id: (context) => const Auth()
+        Auth.id: (context) => const Auth(),
+        Caretaker.id: (context) => const Caretaker()
       },
       initialRoute: Auth.id,
       theme: ThemeData(
@@ -46,7 +48,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({super.key, required this.title});
+  MyHomePage({super.key, this.title = "memora"});
 
   final String title;
 
@@ -55,39 +57,47 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  final navScreens = [Home(), Caretaker(), Home(), Caretaker()];
+
+  int _currentIndex = 0;
+  void updateIndex(index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.fromLTRB(15.0, 30.0, 15.0, 15.0),
-          child: Column(
-            children: <Widget>[
-              const Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  "memora",
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(15.0, 30.0, 15.0, 15.0),
+        child: Column(
+          children: <Widget>[
+            const Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                "memora",
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              Container(
-                margin: const EdgeInsets.only(top: 40.0),
-                child: const Home()
-              ),
-              LocationBtn()
-            ],
-          ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 40.0),
+              child: navScreens[_currentIndex]
+            ),
+            LocationBtn()
+          ],
         ),
-        bottomNavigationBar: const BottomNav(),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          child: const Icon(Icons.mic),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       ),
+      bottomNavigationBar: BottomNav(callback: updateIndex),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        child: const Icon(Icons.mic),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
