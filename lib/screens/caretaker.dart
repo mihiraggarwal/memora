@@ -36,15 +36,19 @@ class _CaretakerState extends State<Caretaker> {
             taker["name"] = element["name"];
             taker["email"] = element["email"];
 
-            caretakers.add(taker);
+            setState(() {
+              caretakers.add(taker);
+            });
           });
         }
 
-        if (doc["request"] == true) {
-          setState(() {
-            request = true;
-            requestor = doc["requestor"];
-          });
+        if ((doc.data() as Map<String, dynamic>).containsKey('request')) {
+          if (doc["request"] == true) {
+            setState(() {
+              request = true;
+              requestor = doc["requestor"];
+            });
+          }
         }
       });
     });

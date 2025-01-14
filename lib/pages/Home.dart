@@ -1,10 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/auth.dart';
 
 class Home extends StatelessWidget {
-  const Home({Key? key}) : super(key: key);
+  Home({Key? key}) : super(key: key);
+
+  FirebaseAuth auth = FirebaseAuth.instance;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +100,33 @@ class Home extends StatelessWidget {
                     )
                 )
             ),
-            onPressed: () {},
+            onPressed: () async {
+              await firestore.collection("users").where("uid", isEqualTo: auth.currentUser?.uid).limit(1).get().then((QuerySnapshot snapshot) {
+                snapshot.docs.forEach((doc) async {
+
+                  final username = doc["name"];
+
+                  if ((doc.data() as Map<String, dynamic>).containsKey('caretakers')) {
+                    final caretakers = doc["caretakers"].map((obj) => obj["email"]).toList();
+                    
+                    List fCMTokens = [];
+                    await Future.forEach(caretakers, (elem) async {
+                      await firestore.collection("users").where("email", isEqualTo: elem).limit(1).get().then((QuerySnapshot querySnapshot) {
+                        querySnapshot.docs.forEach((element) {
+                          print(element["fCMToken"]);
+                          fCMTokens.add(element["fCMToken"]);
+                        });
+                      });
+                    });
+
+                    await firestore.collection("emergencies").add({
+                      "name": username,
+                      "caretakers": fCMTokens
+                    });
+                  }
+                });
+              });
+            },
             child: const Text(
                 "Emergency"
             ),

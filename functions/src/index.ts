@@ -8,18 +8,19 @@ const fcm = admin.messaging();
 
 export const emergencyNotif = functions.firestore
     .document("emergencies/{docId}")
-    .onCreate((snap, context) => {
-        const doc = snap.data();
+    .onCreate(async (snap, context) => {
+        const doc = await snap.data();
         const fCMTokens = doc.caretakers;
 
-        const payload: admin.messaging.MessagingPayload = {
-            notification: {
-                title: "Emergency!",
-                body: `${doc.name} has clicked the Emergency button!`,
-                icon: 'static/ic_launcher.png',
-                clickAction: 'FLUTTER_NOTIFICATION_CLICK'
-            }
-        };
-
-        return fcm.sendToDevice(fCMTokens, payload);
+        fCMTokens.forEach((token: string) => {
+            const payload = {
+                notification: {
+                    title: "Emergency!",
+                    body: `${doc.name} has clicked the Emergency button!`,
+    //                 icon: 'static/ic_launcher.png',
+                },
+                token: token
+            };
+            fcm.send(payload);
+        });
     })

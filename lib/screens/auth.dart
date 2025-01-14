@@ -24,15 +24,17 @@ class _AuthState extends State<Auth> {
   String userEmail = '', userPassword = '';
   bool signedUp = false;
 
-  @override
-  Widget build(BuildContext context) {
-
+  void initState() {
+    super.initState();
     if (auth.currentUser != null) {
       Future.delayed(Duration.zero, () {
         Navigator.pushNamed(context, MyApp.id);
       });
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     if (!signedUp) {
       return Scaffold(
         body: Column(
