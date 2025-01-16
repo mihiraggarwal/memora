@@ -3,12 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:memora/screens/caretaker.dart';
 import 'package:memora/utils/notification.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 
 import 'package:memora/pages/Home.dart';
 import 'package:memora/widgets/BottomNav.dart';
 import 'package:memora/utils/location.dart';
 import 'package:memora/screens/auth.dart';
+import 'package:memora/widgets/VoiceInput.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -17,6 +19,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
+  await dotenv.load(fileName: "lib/.env");
   runApp(const MyApp());
 }
 
@@ -93,10 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       bottomNavigationBar: BottomNav(callback: updateIndex),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.mic),
-      ),
+      floatingActionButton: const VoiceInput(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
