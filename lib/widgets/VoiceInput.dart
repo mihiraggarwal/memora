@@ -1,3 +1,5 @@
+import "package:firebase_auth/firebase_auth.dart";
+import "package:cloud_firestore/cloud_firestore.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
@@ -13,6 +15,9 @@ class VoiceInput extends StatefulWidget {
 
 class _VoiceInputState extends State<VoiceInput> {
 
+  FirebaseAuth auth = FirebaseAuth.instance;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
   String subKey = dotenv.env['SUB_KEY']!;
   String region = dotenv.env['SUB_REGION']!;
   String lang = "en-US";
@@ -21,10 +26,34 @@ class _VoiceInputState extends State<VoiceInput> {
   bool voiceActive = false;
   String transcription = '';
 
-  void activateSpeechRecognizer() {
-    AzureSpeechRecognition.initialize(subKey, region, lang: lang, timeout: "2000");
+  Future<void> statementPush(text) async {
+    DateTime now = DateTime.now();
+    Map<String, dynamic> upload = {
+      "datetime": now,
+      "content": text
+    };
 
-    _speechAzure.setFinalTranscription((text) {
+    final uid = auth.currentUser?.uid;
+    await firestore.collection("users").where("uid", isEqualTo: uid).limit(1).get().then((QuerySnapshot snapshot) {
+      for (var doc in snapshot.docs) {
+        doc.reference.update({
+          "logs": FieldValue.arrayUnion([upload])
+        });
+      }
+    });
+  }
+
+  void activateSpeechRecognizer() {
+    AzureSpeechRecognition.initialize(subKey, region, lang: lang, timeout: "1000");
+
+    _speechAzure.setFinalTranscription((text) async {
+      if (text[text.length - 1] == "?") {
+
+      }
+      else {
+        await statementPush(text);
+      }
+
       setState(() {
         voiceActive = false;
         transcription = text;
