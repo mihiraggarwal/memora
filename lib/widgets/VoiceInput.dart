@@ -4,6 +4,8 @@ import "package:firebase_auth/firebase_auth.dart";
 import "package:cloud_firestore/cloud_firestore.dart";
 import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
+import "package:flutter_azure_tts/flutter_azure_tts.dart";
+import "package:audioplayers/audioplayers.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_dotenv/flutter_dotenv.dart";
@@ -32,6 +34,8 @@ class _VoiceInputState extends State<VoiceInput> {
 
   bool voiceActive = false;
   String transcription = '';
+
+  final player = AudioPlayer();
 
   Future<void> statementPush(text) async {
     DateTime now = DateTime.now();
@@ -104,7 +108,20 @@ class _VoiceInputState extends State<VoiceInput> {
   }
 
   Future <void> tts(text) async {
-    // somehow convert the text to speech
+    final voicesResponse = await FlutterAzureTts.getAvailableVoices();
+    final voice = voicesResponse.voices.where((element) => element.locale.startsWith("en-")).toList(growable: false).first;
+
+    TtsParams params = TtsParams(
+      voice: voice,
+      audioFormat: AudioOutputFormat.audio16khz32kBitrateMonoMp3,
+      text: text
+    );
+
+    final ttsResponse = await FlutterAzureTts.getTts(params);
+    final audioBytes = ttsResponse.audio;
+
+    await player.setSource(BytesSource(audioBytes));
+    await player.resume();
   }
 
   void activateSpeechRecognizer() {
@@ -136,6 +153,12 @@ class _VoiceInputState extends State<VoiceInput> {
   void initState() {
     _speechAzure = AzureSpeechRecognition();
     activateSpeechRecognizer();
+
+    FlutterAzureTts.init(
+      subscriptionKey: subKey,
+      region: region
+    );
+
     super.initState();
   }
 
