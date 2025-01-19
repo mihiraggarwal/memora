@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:location/location.dart';
+import "package:http/http.dart" as http;
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -24,11 +28,31 @@ class _LocationBtnState extends State<LocationBtn> {
   final mapKey = dotenv.env["MAPS_KEY"];
   bool dataLoaded = false;
 
+  double home_lat = 0;
+  double home_lon = 0;
+
+  FirebaseAuth auth = FirebaseAuth.instance;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  Future<List> getHome() async {
+    final uid = auth.currentUser?.uid;
+    String address = '';
+
+    await firestore.collection("users").where("uid", isEqualTo: uid).limit(1).get().then((QuerySnapshot snapshot) {
+      for (var doc in snapshot.docs) {
+        address = doc["address"];
+      }
+    });
+
+    final url = 'https://atlas.microsoft.com/geocode?api-version=2023-06-01&query=$address&top=1&subscription-key=$mapKey';
+    final response = await http.get(Uri.parse(url));
+    final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    return data["features"][0]["geometry"]["coordinates"];
+  }
+
   @override
   Widget build(BuildContext context) {
-
-    // int tilesize = 256;
-    // int zoom = 15;
 
     if (!dataLoaded) {
       getLocation().then((location) {
@@ -37,7 +61,17 @@ class _LocationBtnState extends State<LocationBtn> {
             setState(() {
               widget.lat = currentLocation.latitude!;
               widget.lon = currentLocation.longitude!;
-              dataLoaded = true;
+
+              getHome().then((location) {
+                if (mounted) {
+                  setState(() {
+                    home_lon = location[0]!;
+                    home_lat = location[1]!;
+                    dataLoaded = true;
+
+                  });
+                }
+              });
             });
           }
         });
@@ -52,10 +86,6 @@ class _LocationBtnState extends State<LocationBtn> {
         });
       });
     }
-
-    // double sinLatitude = sin(widget.lat * pi/180);
-    // int x = (((widget.lon + 180) / 360) * tilesize * pow(2, zoom) / tilesize).floor();
-    // int y = ((0.5 - log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * pi)) * tilesize * pow(2, zoom) / tilesize).floor();
 
     if (dataLoaded) {
       return Scaffold(
@@ -78,6 +108,16 @@ class _LocationBtnState extends State<LocationBtn> {
                         point: LatLng(widget.lat, widget.lon),
                         radius: 30,
                         useRadiusInMeter: true
+                    )
+                  ],
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: LatLng(home_lat, home_lon),
+                      child: Icon(Icons.home),
+                      height: 60,
+                      width: 60
                     )
                   ],
                 )

@@ -102,6 +102,7 @@ class _QuestionsState extends State<Questions> {
         children: [
           SpecificTextInput(value: "name", keyboardType: TextInputType.name, callback: updateState),
           SpecificTextInput(value: "age", keyboardType: TextInputType.number, callback: updateState),
+          SpecificTextInput(value: "address", keyboardType: TextInputType.streetAddress, callback: updateState),
           ElevatedButton(
             style: ButtonStyle(
               shape: MaterialStateProperty.all(
