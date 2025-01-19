@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/auth.dart';
+import '../utils/location.dart';
 
 class Home extends StatelessWidget {
   Home({Key? key}) : super(key: key);
@@ -129,6 +130,25 @@ class Home extends StatelessWidget {
             },
             child: const Text(
                 "Emergency"
+            ),
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.only(top: 10.0),
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ButtonStyle(
+                shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5.0)
+                    )
+                )
+            ),
+            onPressed: () async {
+              Navigator.pushNamed(context, LocationBtn.id);
+            },
+            child: const Text(
+                "Get Location"
             ),
           ),
         ),

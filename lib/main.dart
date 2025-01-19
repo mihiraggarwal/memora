@@ -37,7 +37,8 @@ class MyApp extends StatelessWidget {
       routes: {
         MyApp.id: (context) => MyHomePage(title: "memora"),
         Auth.id: (context) => const Auth(),
-        Caretaker.id: (context) => const Caretaker()
+        Caretaker.id: (context) => const Caretaker(),
+        LocationBtn.id: (context) => LocationBtn()
       },
       initialRoute: Auth.id,
       theme: ThemeData(
@@ -91,7 +92,6 @@ class _MyHomePageState extends State<MyHomePage> {
               margin: const EdgeInsets.only(top: 40.0),
               child: navScreens[_currentIndex]
             ),
-            LocationBtn()
           ],
         ),
       ),
