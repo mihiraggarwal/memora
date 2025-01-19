@@ -74,25 +74,30 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(15.0, 30.0, 15.0, 15.0),
-        child: Column(
-          children: <Widget>[
-            const Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                "memora",
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
+      body: Container(
+        height: MediaQuery.of(context).size.height,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(15.0, 30.0, 15.0, 15.0),
+          child: Column(
+            children: <Widget>[
+              const Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  "memora",
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(top: 40.0),
-              child: navScreens[_currentIndex]
-            ),
-          ],
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 40.0),
+                  child: navScreens[_currentIndex]
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNav(callback: updateIndex),
