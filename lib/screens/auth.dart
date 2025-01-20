@@ -84,6 +84,7 @@ class _AuthState extends State<Auth> {
                         ),
                       ),
                       Container(
+                        margin: EdgeInsets.only(top: 10.0),
                         child: TextFormField(
                           decoration:
                           const InputDecoration(
@@ -109,7 +110,7 @@ class _AuthState extends State<Auth> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Container(
-                            margin: EdgeInsets.all(2.0),
+                            margin: EdgeInsets.fromLTRB(0.0, 30.0, 0.0, 10.0),
                             child: ElevatedButton(
                               style: ButtonStyle(
                                 shape: MaterialStateProperty.all(

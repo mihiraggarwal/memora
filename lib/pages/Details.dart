@@ -50,11 +50,11 @@ class _DetailsState extends State<Details> {
                   segments: const [
                     ButtonSegment(
                         value: "user",
-                        label: Text("Sign up as a user")
+                        label: Text("Sign up as a user", style: TextStyle(fontSize: 15),)
                     ),
                     ButtonSegment(
                         value: "caretaker",
-                        label: Text("Sign up as a caretaker")
+                        label: Text("Sign up as a caretaker", style: TextStyle(fontSize: 15),)
                     ),
                   ],
                   selected: {user == true ? "user" : "caretaker"},
@@ -65,7 +65,10 @@ class _DetailsState extends State<Details> {
               ],
             ),
           ),
-            Questions()
+            Container(
+              margin: EdgeInsets.only(top: 30),
+              child: Questions(user: user)
+            )
         ]
        )
       )
@@ -74,7 +77,8 @@ class _DetailsState extends State<Details> {
 }
 
 class Questions extends StatefulWidget {
-  const Questions({Key? key}) : super(key: key);
+  final bool user;
+  const Questions({Key? key, required this.user}) : super(key: key);
 
   @override
   State<Questions> createState() => _QuestionsState();
@@ -97,6 +101,52 @@ class _QuestionsState extends State<Questions> {
     print(details);
   }
 
+  Widget userSpecific() {
+    if (widget.user == true) {
+      return Column(
+        children: [
+          SpecificTextInput(hint: "Address", value: "address", keyboardType: TextInputType.streetAddress, callback: updateState),
+          SpecificTextInput(hint: "Max wander allowed (metres)",
+              value: "threshold",
+              keyboardType: TextInputType.number,
+              callback: updateState),
+          Container(
+            margin: EdgeInsets.only(top: 30.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  flex: 5,
+                  child: Text(
+                    "Send notification to caretakers on wander",
+                    style: TextStyle(
+                        fontSize: 15
+                    ),
+                  ),
+                ),
+                Spacer(flex: 1),
+                Expanded(
+                  flex: 1,
+                  child: CupertinoSwitch(
+                    value: wanderNotif,
+                    onChanged: (value) {
+                      setState(() {
+                        wanderNotif = value;
+                        details["wanderNotif"] = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Container();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -105,54 +155,40 @@ class _QuestionsState extends State<Questions> {
         children: [
           SpecificTextInput(hint: "Name", value: "name", keyboardType: TextInputType.name, callback: updateState),
           SpecificTextInput(hint: "Age", value: "age", keyboardType: TextInputType.number, callback: updateState),
-          SpecificTextInput(hint: "Address", value: "address", keyboardType: TextInputType.streetAddress, callback: updateState),
-          SpecificTextInput(hint: "Minimum wander distance allowed", value: "threshold", keyboardType: TextInputType.number, callback: updateState),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Send notification to caretakers on wander"
-              ),
-              CupertinoSwitch(
-                value: wanderNotif,
-                onChanged: (value) {
-                  setState(() {
-                    wanderNotif = value;
-                    details["wanderNotif"] = value;
-                  });
-                },
-              ),
-            ],
-          ),
-          ElevatedButton(
-            style: ButtonStyle(
-              shape: MaterialStateProperty.all(
-                RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5.0)
+          userSpecific(),
+          Container(
+            margin: EdgeInsets.only(top: 40.0),
+            child: ElevatedButton(
+              style: ButtonStyle(
+                shape: MaterialStateProperty.all(
+                  RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5.0)
+                  ),
                 ),
               ),
-            ),
-            child: const Text('Finish'),
-            onPressed: () async {
-              if (_formKey.currentState?.validate() == true) {
-                _formKey.currentState?.save();
+              child: const Text('Finish'),
+              onPressed: () async {
+                if (_formKey.currentState?.validate() == true) {
+                  _formKey.currentState?.save();
 
-                details["uid"] = auth.currentUser?.uid;
-                details["email"] = auth.currentUser?.email;
+                  details["uid"] = auth.currentUser?.uid;
+                  details["email"] = auth.currentUser?.email;
+                  details["isUser"] = widget.user;
 
-                String fCMToken = await Messaging().initNotification();
-                details["fCMToken"] = fCMToken;
+                  String fCMToken = await Messaging().initNotification();
+                  details["fCMToken"] = fCMToken;
 
-                await firestore.collection("users").add(
-                  details
-                );
+                  await firestore.collection("users").add(
+                    details
+                  );
 
-                auth.currentUser?.updateDisplayName(details["name"]);
+                  auth.currentUser?.updateDisplayName(details["name"]);
 
-                print("User saved");
-                Navigator.pushNamed(context, MyApp.id);
+                  print("User saved");
+                  Navigator.pushNamed(context, MyApp.id);
+                }
               }
-            }
+            ),
           ),
         ],
       ),
@@ -175,22 +211,25 @@ class SpecificTextInput extends StatefulWidget {
 class _SpecificTextInputState extends State<SpecificTextInput> {
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      decoration: InputDecoration(
-        hintText: widget.hint,
-        border: const OutlineInputBorder(),
+    return Container(
+      margin: EdgeInsets.fromLTRB(0.0, 5.0, 0.0, 5.0),
+      child: TextFormField(
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          border: const OutlineInputBorder(),
+        ),
+        keyboardType: widget.keyboardType,
+        onSaved: (String? s) => {
+          widget.callback(widget.value, s)
+        },
+        validator: (String? s) {
+          if (s == null || s.isEmpty) {
+            return 'Please enter your ${widget.value}';
+          } else {
+            return null;
+          }
+        },
       ),
-      keyboardType: widget.keyboardType,
-      onSaved: (String? s) => {
-        widget.callback(widget.value, s)
-      },
-      validator: (String? s) {
-        if (s == null || s.isEmpty) {
-          return 'Please enter your ${widget.value}';
-        } else {
-          return null;
-        }
-      },
     );
   }
 }
