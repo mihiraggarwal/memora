@@ -30,6 +30,18 @@ class _LocationBtnState extends State<LocationBtn> {
 
   double home_lat = 0;
   double home_lon = 0;
+  List routePoints = [];
+
+  bool wanderNotif = false;
+  bool sentNotif = false;
+  var threshold = 0;
+
+  bool wandered = false;
+  String username = '';
+  bool routeWander = false;
+
+  List caretakers = [];
+  List fCMTokens = [];
 
   FirebaseAuth auth = FirebaseAuth.instance;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -41,7 +53,22 @@ class _LocationBtnState extends State<LocationBtn> {
     await firestore.collection("users").where("uid", isEqualTo: uid).limit(1).get().then((QuerySnapshot snapshot) {
       for (var doc in snapshot.docs) {
         address = doc["address"];
+        wanderNotif = doc["wanderNotif"];
+        threshold = doc["threshold"];
+        username = doc["name"];
+
+        if ((doc.data() as Map<String, dynamic>).containsKey('caretakers')) {
+          caretakers = doc["caretakers"].map((obj) => obj["email"]).toList();
+        }
       }
+    });
+
+    await Future.forEach(caretakers, (elem) async {
+      await firestore.collection("users").where("email", isEqualTo: elem).limit(1).get().then((QuerySnapshot querySnapshot) {
+        for (var element in querySnapshot.docs) {
+          fCMTokens.add(element["fCMToken"]);
+        }
+      });
     });
 
     final url = 'https://atlas.microsoft.com/geocode?api-version=2023-06-01&query=$address&top=1&subscription-key=$mapKey';
@@ -51,24 +78,49 @@ class _LocationBtnState extends State<LocationBtn> {
     return data["features"][0]["geometry"]["coordinates"];
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Future<void> createWander() async {
+    await firestore.collection("wanders").add({
+      "name": username,
+      "threshold": threshold,
+      "caretakers": fCMTokens
+    });
+    sentNotif = true;
+  }
 
+  Future<List> getRoute() async {
+    final url = "https://atlas.microsoft.com/route/directions/json?api-version=1.0&query=${widget.lat},${widget.lon}:$home_lat,$home_lon&travelMode=pedestrian&subscription-key=$mapKey";
+    final response = await http.get(Uri.parse(url));
+    final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+
+    return data["routes"][0]["legs"][0]["points"];
+  }
+
+  @override
+  void initState() {
+    super.initState();
     if (!dataLoaded) {
       getLocation().then((location) {
         location.getLocation().then((currentLocation) {
+
           if (mounted) {
             setState(() {
               widget.lat = currentLocation.latitude!;
               widget.lon = currentLocation.longitude!;
+            });
 
-              getHome().then((location) {
+            getHome().then((location) {
+              if (mounted) {
+                setState(() {
+                  home_lon = location[0]!;
+                  home_lat = location[1]!;
+                });
+              }
+
+              getRoute().then((points) {
                 if (mounted) {
                   setState(() {
-                    home_lon = location[0]!;
-                    home_lat = location[1]!;
+                    routePoints = points;
                     dataLoaded = true;
-
                   });
                 }
               });
@@ -83,10 +135,37 @@ class _LocationBtnState extends State<LocationBtn> {
               widget.lon = newLocation.longitude!;
             });
           }
+
+          if (wanderNotif) {
+            const int r = 6371;
+            const p = pi / 180;
+
+            final a = 0.5 - cos((home_lat - widget.lat) * p) / 2 + cos(home_lat * p) + cos(widget.lat * p) * (1 - cos((home_lon - widget.lon) * p)) / 2;
+            final dist = 2 * r * asin(sqrt(a));
+
+            if (dist >= threshold) {
+              if (!sentNotif) {
+                createWander();
+              }
+              // if (!routeWander) {
+              //   getRoute().then((points) {
+              //     if (mounted) {
+              //       setState(() {
+              //         routeWander = true;
+              //         routePoints = points;
+              //       });
+              //     }
+              //   });
+              // }
+            }
+          }
         });
       });
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     if (dataLoaded) {
       return Scaffold(
         body: Stack(
@@ -107,7 +186,8 @@ class _LocationBtnState extends State<LocationBtn> {
                     CircleMarker(
                         point: LatLng(widget.lat, widget.lon),
                         radius: 30,
-                        useRadiusInMeter: true
+                        useRadiusInMeter: true,
+                        color: Colors.blueAccent
                     )
                   ],
                 ),
@@ -120,6 +200,15 @@ class _LocationBtnState extends State<LocationBtn> {
                       width: 60
                     )
                   ],
+                ),
+                CircleLayer(
+                  circles: routePoints.map((elem) {
+                    return CircleMarker(
+                      point: LatLng(elem["latitude"], elem["longitude"]),
+                      radius: 15,
+                      useRadiusInMeter: true
+                    );
+                  }).toList(),
                 )
               ],
             ),

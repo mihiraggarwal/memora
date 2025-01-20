@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:memora/main.dart';
@@ -87,6 +88,8 @@ class _QuestionsState extends State<Questions> {
   FirebaseAuth auth = FirebaseAuth.instance;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+  bool wanderNotif = false;
+
   void updateState(k, v) {
     setState(() {
       details[k] = v;
@@ -100,9 +103,27 @@ class _QuestionsState extends State<Questions> {
       key: _formKey,
       child: Column(
         children: [
-          SpecificTextInput(value: "name", keyboardType: TextInputType.name, callback: updateState),
-          SpecificTextInput(value: "age", keyboardType: TextInputType.number, callback: updateState),
-          SpecificTextInput(value: "address", keyboardType: TextInputType.streetAddress, callback: updateState),
+          SpecificTextInput(hint: "Name", value: "name", keyboardType: TextInputType.name, callback: updateState),
+          SpecificTextInput(hint: "Age", value: "age", keyboardType: TextInputType.number, callback: updateState),
+          SpecificTextInput(hint: "Address", value: "address", keyboardType: TextInputType.streetAddress, callback: updateState),
+          SpecificTextInput(hint: "Minimum wander distance allowed", value: "threshold", keyboardType: TextInputType.number, callback: updateState),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Send notification to caretakers on wander"
+              ),
+              CupertinoSwitch(
+                value: wanderNotif,
+                onChanged: (value) {
+                  setState(() {
+                    wanderNotif = value;
+                    details["wanderNotif"] = value;
+                  });
+                },
+              ),
+            ],
+          ),
           ElevatedButton(
             style: ButtonStyle(
               shape: MaterialStateProperty.all(
@@ -140,8 +161,9 @@ class _QuestionsState extends State<Questions> {
 }
 
 class SpecificTextInput extends StatefulWidget {
-  const SpecificTextInput({Key? key, required this.value, required this.keyboardType, required this.callback}) : super(key: key);
+  const SpecificTextInput({Key? key, required this.hint, required this.value, required this.keyboardType, required this.callback}) : super(key: key);
 
+  final String hint;
   final String value;
   final TextInputType keyboardType;
   final Function callback;
@@ -155,7 +177,7 @@ class _SpecificTextInputState extends State<SpecificTextInput> {
   Widget build(BuildContext context) {
     return TextFormField(
       decoration: InputDecoration(
-        hintText: widget.value[0].toUpperCase() + widget.value.substring(1),
+        hintText: widget.hint,
         border: const OutlineInputBorder(),
       ),
       keyboardType: widget.keyboardType,
