@@ -24,3 +24,21 @@ export const emergencyNotif = functions.firestore
             fcm.send(payload);
         });
     })
+
+export const wanderNotif = functions.firestore
+    .document("wanders/{docId}")
+    .onCreate(async (snap, context) => {
+        const doc = await snap.data();
+        const fCMTokens = doc.caretakers;
+
+        fCMTokens.forEach((token: string) => {
+            const payload = {
+                notification: {
+                    title: "Wander Notification!",
+                    body: `${doc.name} has wandered to over ${doc.threshold} metres from home`
+                },
+                token: token
+            };
+            fcm.send(payload);
+        });
+    });
